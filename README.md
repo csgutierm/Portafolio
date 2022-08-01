@@ -1,5 +1,5 @@
-# MinimalPortfolioTemplate
-A Minimal Perosnal Portfolio Template
+# MinimalPortfolio
+A Minimal Portfolio 
 
 # Preview
-<a href="https://www.ganeshkumarm.me/MinimalPortfolioTemplate/">MinimalPortfolioTemplate</a>
+<a href="https://csgutierm.github.io/Portafolio/index.html">Portfolio</a>
