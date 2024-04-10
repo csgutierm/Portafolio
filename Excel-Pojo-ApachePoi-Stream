@@ -1,0 +1,96 @@
+//POJOs
+
+//Row POJO
+public class ExcelRow {
+    private List<ExcelCell> cells;
+
+    public ExcelRow(List<ExcelCell> cells) {
+        this.cells = cells;
+    }
+
+    public List<ExcelCell> getCells() {
+        return cells;
+    }
+
+    public void setCells(List<ExcelCell> cells) {
+        this.cells = cells;
+    }
+}
+
+//Cell POJO
+public class ExcelCell {
+    private String header;
+    private String value;
+    private boolean isEmpty;
+    private int length;
+    private String format;
+
+    public ExcelCell(String header, String value, boolean isEmpty, int length, String format) {
+        this.header = header;
+        this.value = value;
+        this.isEmpty = isEmpty;
+        this.length = length;
+        this.format = format;
+    }
+
+//getters and setters
+
+
+//SERVICE
+    public List<ExcelRow> readExcel(MultipartFile file) throws IOException {
+        List<ExcelRow> excelData = new ArrayList<>();
+
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = StreamingReader.builder()
+                     .rowCacheSize(10)
+                     .bufferSize(4096)
+                     .open(is)) {
+            for (Sheet sheet : workbook) {
+                Iterator<Row> rowIterator = sheet.iterator();
+                if (rowIterator.hasNext()) {
+                    Row headerRow = rowIterator.next();
+                    Map<Integer, String> columnIndexToHeader = new HashMap<>();
+                    for (Cell cell : headerRow) {
+                        columnIndexToHeader.put(cell.getColumnIndex(), cell.getStringCellValue());
+                    }
+                    while (rowIterator.hasNext()) {
+                        Row row = rowIterator.next();
+                        List<ExcelCell> rowData = new ArrayList<>();
+                        for (Cell cell : row) {
+                            String header = columnIndexToHeader.get(cell.getColumnIndex());
+                            if (header != null) {
+                                boolean isEmpty = cell.getCellType() == CellType.BLANK;
+                                int length = isEmpty ? 0 : cell.getStringCellValue().length();
+                                CellStyle cellStyle = cell.getCellStyle();
+                                String format = cellStyle.getDataFormatString();
+                                String value = isEmpty ? "" : cell.getStringCellValue();
+                                rowData.add(new ExcelCell(header, value, isEmpty, length, format));
+                            }
+                        }
+                        if (!rowData.isEmpty()) // don't add empty rows unless you want
+                            excelData.add(new ExcelRow(rowData));
+                    }
+                }
+            }
+        }
+
+        return excelData;
+    }
+
+//Dependencies
+//apache poi 5+
+// and for low ram usage stream reader
+
+//    <groupId>com.github.pjfanning</groupId>
+//    <artifactId>excel-streaming-reader</artifactId>
+//    <version>4.3.0</version>
+
+//Controller
+
+    @PostMapping("/read-excel-stream")
+    public List<ExcelRow> readExcelStream(@RequestParam("file") MultipartFile file) throws IOException {
+
+    List<ExcelRow> excelData = excelStreamService.readExcel(file);
+
+        return excelData;
+    }
